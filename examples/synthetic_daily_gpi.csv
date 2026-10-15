@@ -1,0 +1,89 @@
+participant_id,treatment,phase,relative_day,n_readings,gpi
+SYN_CLC_A,CLC,1. Baseline,-3,202,214
+SYN_CLC_A,CLC,1. Baseline,-1,288,216
+SYN_CLC_A,CLC,2. Post Randomization,1,202,208
+SYN_CLC_A,CLC,2. Post Randomization,28,288,210
+SYN_CLC_A,CLC,2. Post Randomization,29,202,207
+SYN_CLC_A,CLC,2. Post Randomization,56,288,209
+SYN_CLC_A,CLC,2. Post Randomization,57,202,206
+SYN_CLC_A,CLC,2. Post Randomization,84,288,208
+SYN_CLC_A,CLC,2. Post Randomization,85,202,205
+SYN_CLC_A,CLC,2. Post Randomization,112,288,207
+SYN_CLC_A,CLC,2. Post Randomization,113,202,204
+SYN_CLC_A,CLC,2. Post Randomization,140,288,206
+SYN_CLC_A,CLC,2. Post Randomization,141,202,203
+SYN_CLC_A,CLC,2. Post Randomization,182,288,205
+SYN_CLC_B,CLC,1. Baseline,-3,202,219
+SYN_CLC_B,CLC,1. Baseline,-1,288,221
+SYN_CLC_B,CLC,2. Post Randomization,1,202,213
+SYN_CLC_B,CLC,2. Post Randomization,28,288,215
+SYN_CLC_B,CLC,2. Post Randomization,29,202,212
+SYN_CLC_B,CLC,2. Post Randomization,56,288,214
+SYN_CLC_B,CLC,2. Post Randomization,57,202,211
+SYN_CLC_B,CLC,2. Post Randomization,84,288,213
+SYN_CLC_B,CLC,2. Post Randomization,85,202,210
+SYN_CLC_B,CLC,2. Post Randomization,112,288,212
+SYN_CLC_B,CLC,2. Post Randomization,113,202,209
+SYN_CLC_B,CLC,2. Post Randomization,140,288,211
+SYN_CLC_B,CLC,2. Post Randomization,141,202,208
+SYN_CLC_B,CLC,2. Post Randomization,182,288,210
+SYN_CLC_C,CLC,1. Baseline,-3,202,224
+SYN_CLC_C,CLC,1. Baseline,-1,288,226
+SYN_CLC_C,CLC,2. Post Randomization,1,202,218
+SYN_CLC_C,CLC,2. Post Randomization,28,288,220
+SYN_CLC_C,CLC,2. Post Randomization,29,202,217
+SYN_CLC_C,CLC,2. Post Randomization,56,288,219
+SYN_CLC_C,CLC,2. Post Randomization,57,202,216
+SYN_CLC_C,CLC,2. Post Randomization,84,288,218
+SYN_CLC_C,CLC,2. Post Randomization,85,202,215
+SYN_CLC_C,CLC,2. Post Randomization,112,288,217
+SYN_CLC_C,CLC,2. Post Randomization,113,202,214
+SYN_CLC_C,CLC,2. Post Randomization,140,288,216
+SYN_CLC_C,CLC,2. Post Randomization,141,202,213
+SYN_CLC_C,CLC,2. Post Randomization,182,288,215
+SYN_SAP_A,SAP,1. Baseline,-3,202,214
+SYN_SAP_A,SAP,1. Baseline,-1,288,216
+SYN_SAP_A,SAP,2. Post Randomization,1,202,214
+SYN_SAP_A,SAP,2. Post Randomization,28,288,216
+SYN_SAP_A,SAP,2. Post Randomization,29,202,215
+SYN_SAP_A,SAP,2. Post Randomization,56,288,217
+SYN_SAP_A,SAP,2. Post Randomization,57,202,216
+SYN_SAP_A,SAP,2. Post Randomization,84,288,218
+SYN_SAP_A,SAP,2. Post Randomization,85,202,217
+SYN_SAP_A,SAP,2. Post Randomization,112,288,219
+SYN_SAP_A,SAP,2. Post Randomization,113,202,218
+SYN_SAP_A,SAP,2. Post Randomization,140,288,220
+SYN_SAP_A,SAP,2. Post Randomization,141,202,219
+SYN_SAP_A,SAP,2. Post Randomization,182,288,221
+SYN_SAP_B,SAP,1. Baseline,-3,202,219
+SYN_SAP_B,SAP,1. Baseline,-1,288,221
+SYN_SAP_B,SAP,2. Post Randomization,1,202,219
+SYN_SAP_B,SAP,2. Post Randomization,28,288,221
+SYN_SAP_B,SAP,2. Post Randomization,29,202,220
+SYN_SAP_B,SAP,2. Post Randomization,56,288,222
+SYN_SAP_B,SAP,2. Post Randomization,57,202,221
+SYN_SAP_B,SAP,2. Post Randomization,84,288,223
+SYN_SAP_B,SAP,2. Post Randomization,85,202,222
+SYN_SAP_B,SAP,2. Post Randomization,112,288,224
+SYN_SAP_B,SAP,2. Post Randomization,113,202,223
+SYN_SAP_B,SAP,2. Post Randomization,140,288,225
+SYN_SAP_B,SAP,2. Post Randomization,141,202,224
+SYN_SAP_B,SAP,2. Post Randomization,182,288,226
+SYN_SAP_C,SAP,1. Baseline,-3,202,224
+SYN_SAP_C,SAP,1. Baseline,-1,288,226
+SYN_SAP_C,SAP,2. Post Randomization,1,202,224
+SYN_SAP_C,SAP,2. Post Randomization,28,288,226
+SYN_SAP_C,SAP,2. Post Randomization,29,202,225
+SYN_SAP_C,SAP,2. Post Randomization,56,288,227
+SYN_SAP_C,SAP,2. Post Randomization,57,202,226
+SYN_SAP_C,SAP,2. Post Randomization,84,288,228
+SYN_SAP_C,SAP,2. Post Randomization,85,202,227
+SYN_SAP_C,SAP,2. Post Randomization,112,288,229
+SYN_SAP_C,SAP,2. Post Randomization,113,202,228
+SYN_SAP_C,SAP,2. Post Randomization,140,288,230
+SYN_SAP_C,SAP,2. Post Randomization,141,202,229
+SYN_SAP_C,SAP,2. Post Randomization,182,288,231
+SYN_CLC_A,CLC,2. Post Randomization,0,288,222
+SYN_CLC_A,CLC,2. Post Randomization,183,288,224
+SYN_CLC_A,CLC,2. Post Randomization,2,201,226
+SYN_CLC_A,CLC,2. Post Randomization,3,289,228
