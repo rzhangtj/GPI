@@ -1,90 +1,97 @@
 # Glycemic Persistence Index (GPI)
 
-Python code for calculating daily GPI from five-minute continuous glucose monitoring (CGM) observations and recreating Figure 2A treatment-response summaries from locally supplied daily GPI data.
+Python code accompanying **CGM-Derived Glycemic Persistence Index Integrates Glucose Magnitude and Duration**.
 
-GPI is the largest integer k for which glucose is at least k mg/dL for at least k represented minutes. It uses glucose in mg/dL and duration in minutes; it does not require a predefined glucose threshold. Contributing observations need not be consecutive.
+GPI is the largest integer k for which glucose is ≥k mg/dL for a cumulative duration of ≥k minutes per day. Observations need not be consecutive.
 
-## Contents
+## Programs
 
 | File | Purpose |
 |---|---|
-| `compute_gpi.py` | Daily GPI and conventional CGM summary metrics. |
-| `reproduce_figure2a.py` | Participant-interval aggregation, treatment means, SEM, and Figure 2A plotting. |
-| `examples/synthetic_cgm.csv` | Entirely synthetic five-minute CGM observations. |
-| `examples/synthetic_daily_gpi.csv` | Separate synthetic demonstration of Figure 2A input. |
-| `requirements.txt` | Dependency versions used to check both examples. |
+| `compute_gpi.py` | Daily GPI and conventional CGM metrics |
+| `reproduce_figure2a.py` | Figure 2A treatment trajectories |
+| `analyze_dclp3.py` | ANCOVA and sensitivity analyses; Figure 2B within-TIR variation; Figure 2E day-to-day variability |
+| `analyze_aireadi.py` | Figure 3 distributions; Figure 4 HbA1c associations and ROC analysis; Table 1 |
 
-Both example datasets are synthetic. Neither contains actual participant records, and neither reproduces the published numerical results. They demonstrate separate workflows; the calculator example is not the source of the Figure 2A example.
+Scripts use cleaned inputs in the formats below. They generate analytical plots and numerical summaries rather than identical manuscript artwork. The calculator implements the GPI definition underlying Figure 1. Individual trace panels 2C–D, Table 2 subgroup correlations, and supplementary figures/tables are outside this package's scope.
 
-## Installation
+## Installation and use
 
-Python 3.12 is recommended. The examples were checked with Python 3.12.14 on Linux and the dependency versions listed in `requirements.txt`.
+Python 3.12 is recommended.
 
 ```bash
 python -m pip install -r requirements.txt
+python compute_gpi.py --input examples/synthetic_cgm.csv --output daily_metrics.csv
+python reproduce_figure2a.py --input examples/synthetic_daily_gpi.csv --output-dir outputs/figure2a --synthetic
+python analyze_dclp3.py --input examples/synthetic_dclp3_daily.csv --output-dir outputs/dclp3 --synthetic
+python analyze_aireadi.py --input examples/synthetic_aireadi_participants.csv --output-dir outputs/aireadi --synthetic
 ```
 
-Run the commands below from this repository's root directory.
+The example CSVs are entirely synthetic and demonstrate separate input formats; they do not reproduce study results. Replace the input paths with authorized data to run the study analyses and omit `--synthetic`. Use new output directories. Synthetic plots are labeled automatically when all identifiers start with `SYN_`.
 
-## 1. Calculate daily GPI
+## GPI calculator
 
-```bash
-python compute_gpi.py --input examples/synthetic_cgm.csv --output synthetic_daily_metrics.csv
-```
+Required columns: `participant_id,timestamp,glucose_mg_dl`.
 
-Input columns are `participant_id`, `timestamp`, and `glucose_mg_dl`. Supply preprocessed native five-minute observations, with glucose in mg/dL and consistent timestamps defining the intended calendar day. Each reading represents five minutes. The script does not infer sampling intervals, resample, fill missing observations, remove duplicate timestamps, or perform study-specific sensor validity checks. Clean these upstream; do not supply irregular or differently sampled data without adapting the represented-time calculation.
+Supply cleaned native five-minute observations with consistent calendar-day timestamps. Apply sensor validity rules and remove duplicate or conflicting timestamps upstream. The calculator does not resample, interpolate, or assign duration to missing observations. Unparseable timestamps, nonnumeric glucose, and missing identifiers are dropped; nonpositive or infinite glucose is invalid.
 
-Unparseable timestamps or glucose values and missing identifiers are dropped. The calculator groups by participant and calendar date. Its existing default is at least **200 valid readings/day**; days below that threshold remain in the output with missing metrics. This generic calculator rule is distinct from the Figure 2A rule of **202–288 readings/day**. Passing calculator QC alone does not establish eligibility for Figure 2A.
+The importable function `compute_gpi(glucose_values, sampling_interval_minutes=5)` supports positive regular sampling intervals. The daily command uses five minutes per reading. Different sampling frequencies require corresponding completeness rules; equivalence across frequencies has not been established.
 
-Outputs include `gpi`, `n_readings`, `qc_pass`, mean and sample SD of glucose (mg/dL), glucose CV as a **fraction** (multiply by 100 for percent), and TIR/TAR/TBR as percentages. The function `compute_gpi` can also be imported for use with preprocessed glucose arrays. Its sampling interval argument defaults to five minutes.
+The generic calculator requires ≥200 readings/day; days below this threshold have missing metrics. For study analyses, apply the stricter cohort-specific criteria below. Daily GPI is an integer; retain full precision when averaging days. Calculator glucose CV is a fraction, whereas TIR/TAR/TBR are percentages.
 
-## 2. Recreate Figure 2A
+## DCLP3
 
-### Input and inclusion assumptions
+Figure 2A input columns:
 
-Supply a CSV with one row per participant and recorded calendar study day:
+`participant_id,treatment,phase,relative_day,n_readings,gpi`
 
-| Column | Meaning |
-|---|---|
-| `participant_id` | Local participant identifier; consistent across days. |
-| `treatment` | Randomized assignment: `CLC` = closed loop; `SAP` = control. |
-| `phase` | Source-designated `1. Baseline` or `2. Post Randomization`. |
-| `relative_day` | Integer recorded calendar date minus recorded randomization date, after normalizing both to midnight. Randomization is day 0. |
-| `n_readings` | Number of valid native five-minute observations used for that day's GPI, after the original preprocessing. |
-| `gpi` | Daily integer GPI under the manuscript's mg/dL-and-minutes convention; do not round participant means in advance. |
+The DCLP3 analysis additionally requires:
 
-Daily values and counts must already reflect the original glucose-validity, duplicate, source-clock and daily-GPI processing. This script cannot verify those upstream steps. It applies the final **202–288 readings/day, inclusive** rule, so inputs may contain either only qualifying days or additional observed days with complete daily values and counts.
+`date,mean_glucose,tir_70_180,tar_180_250,tar_gt_180,tar_gt_250`
 
-Baseline includes qualifying days in the **source-designated baseline phase**, regardless of relative day; do not redefine it using negative days. Follow-up includes qualifying post-randomization-phase days **1–182**, inclusive; day 0 is excluded. Follow-up intervals are 1–28, 29–56, 57–84, 85–112, 113–140 and 141–182, labelled 1–4, 5–8, 9–12, 13–16, 17–20 and 21–26 weeks. No days are filled or imputed.
+Supply one complete row per participant/calendar day. Treatment is `CLC` or `SAP` and must remain constant for each participant. Phase is `1. Baseline` or `2. Post Randomization`. Relative day is calendar date minus randomization date, with randomization day 0. Reading counts and daily metrics must reflect the original cleaning and five-minute observations. Time metrics are percentages; mean glucose is mg/dL. TIR includes 70 and 180; TAR 180–250 means >180 and ≤250. No missing readings or days are imputed.
 
-Within each participant and interval, daily GPI is averaged arithmetically. Treatment means then average participant means with **equal participant weight**, regardless of day count. Error bars are **SEM = sample SD of participant means / sqrt(n)**, using SD with `ddof=1`. Counts reflect participants actually contributing to each point; no complete-case exclusion across intervals is imposed. SEM is undefined for fewer than two contributing participants. These are unadjusted means, not ANCOVA estimates. Plot axes and treatment colours follow the revised Figure 2A.
+### Eligibility and calculations
 
-### Synthetic example
+- Primary days contain 202–288 valid readings. Baseline follows the source-designated phase, regardless of relative date. Follow-up includes post-randomization-phase days 1–182, excluding day 0.
+- Participant means average qualifying daily values with equal day weights. ANCOVA includes participants with both baseline and follow-up means, with equal participant weights.
+- Figure 2A follow-up intervals are days 1–28, 29–56, 57–84, 85–112, 113–140, and 141–182. Group means average available participant means; error bars are SEM (sample SD / sqrt(n)). The plot uses the manuscript's fixed GPI axis, 195–240.
+- ANCOVA fits follow-up GPI ~ treatment + baseline GPI, with intercept. HC3 uses Student-t inference. The interaction model centers baseline at the pooled mean, so its treatment coefficient equals the predicted contrast averaged over the observed baseline distribution.
+- Diagnostics include residual and normal Q–Q plots, Breusch–Pagan and Shapiro–Wilk tests. Completeness sensitivity repeats aggregation and ANCOVA at 231–288 and 260–288 readings/day.
+- Figure 2B uses left-closed 5-percentage-point TIR bands; the final 95–100 band includes 100. Models include categorical TIR band alone and TIR band plus participant fixed effects. Residual SD is sqrt(SSE / residual degrees of freedom).
+- Figure 2E calculates sample SD / mean across qualifying baseline days for each participant and metric, pooling treatment groups. At least two days and a positive mean are required; undefined CVs are excluded. CV is reported as a fraction.
 
-Run from the repository root:
+Outputs include Figure 2A treatment and participant summaries, `ancova.json`, diagnostic plots, `within_tir.json`, and Figure 2B/2E summary CSVs and plots.
 
-```bash
-python reproduce_figure2a.py --input examples/synthetic_daily_gpi.csv --output-dir outputs/figure2a_demo --synthetic
-```
+## AI-READI
 
-The small deterministic dataset uses clearly synthetic identifiers and relative days, covers both arms and all intervals, and includes a few excluded days to demonstrate the day-count and follow-up boundaries. `--synthetic` visibly labels the plot; synthetic identifiers beginning with `SYN_` also trigger this label automatically. This example is not evidence about treatment effects.
+Required columns, one row per participant:
 
-### Authorized local input
+`participant_id,study_group,hba1c,gpi,mean_glucose,tar_gt_180,tir_70_180,cv_glucose`
 
-Prepare the same six columns from an authorized daily GPI dataset using the unchanged source phases, randomized assignments, recorded-date convention and preprocessing. Do not infer baseline from relative day. Run:
+Prepare participant metrics as arithmetic means of daily metrics from days with ≥230 valid readings; no upper daily count limit was used. Each participant must have at least one qualifying day. Participant glucose CV is the average daily CV, not the CV of daily means. Use percentages for CV, TIR, TAR, and HbA1c, and mg/dL for mean glucose. Convert fractional time metrics and CV to percentages before supplying this input. Retain original cohort assignments rather than inferring groups from HbA1c.
 
-```bash
-python reproduce_figure2a.py --input local_daily_gpi.csv --output-dir private/local_figure2a
-```
+Use these group labels:
 
-Outputs are `figure2a.png`, `treatment_summary.csv` and `participant_interval_means.csv`; use a new output directory to preserve previous results. Keep authorized inputs and all derived outputs private, especially participant summaries. **Actual DCLP3 data are not distributed. Reproducing the published numerical results requires authorized access to those data.**
+- `Healthy`
+- `Prediabetes/lifestyle-controlled`
+- `Oral/non-insulin diabetes`
+- `Insulin-treated diabetes`
 
-## Connecting the workflows
+The distribution cohort contains 1,898 participants; the HbA1c-matched cohort contains 1,848. Supply blank HbA1c where unavailable. Figure 3A restricts healthy participants to HbA1c <5.7%; Figure 3B uses all participants. Figure 4 and Table 1 exclude missing HbA1c and require complete comparator metrics in the same remaining participants. Comparator fields may be blank when HbA1c is absent. Exact seeded resampling requires the same participant order as the source analysis; input order is preserved.
 
-For authorized data, calculate daily GPI after study-specific preprocessing, then join daily results to randomized treatment assignment, source phase, and randomization date to prepare the six Figure 2A input columns. These metadata are not inferred by the calculator. Remove records without complete daily values before passing them to the Figure 2A script. Retain the original preprocessing and calendar conventions when reproducing the study.
+### Statistical calculations
 
-## Data access and scope
+Figure 4A reports overall Pearson and Spearman correlations. ROC analyses evaluate HbA1c ≥5.7% and ≥6.5%. TIR is negated for ROC calculations; exported native TIR thresholds use ≤, while other thresholds use ≥.
 
-Actual DCLP3 and AI-READI participant data are not included. Reproduction of the published Figure 2A numerical results requires authorized DCLP3-derived input. This repository does not reproduce all manuscript analyses or the original raw-CGM preprocessing. The Figure 2A y-axis is fixed to match the supplied figure code and may not suit other datasets.
+Full-cohort cutoffs maximize the Youden index using `roc_curve(drop_intermediate=True)` and the first exact maximum among descending retained thresholds. AUC and cutoff percentile intervals use 2,000 unrestricted participant bootstrap draws (seed 264707), shared across metrics and endpoints. One-class draws are omitted; nonfinite cutoffs are omitted from cutoff intervals. Valid draw counts are exported.
 
-Keep authorized data and derived participant-level outputs outside the public repository. The ignored `private/` and `outputs/` directories are conveniences, not substitutes for reviewing files before publication.
+Internal validation uses ten repeats of stratified five-fold cross-validation (seeds 7000–7009). Metrics share splits within each endpoint. Training-selected cutoffs are applied to held-out participants; classifications are pooled within each repeat before averaging performance. Table 1 AUCs are full-cohort estimates. Cross-validation evaluates cutoff selection, not external validity of the fixed full-cohort cutoffs. Predictive values depend on cohort prevalence.
+
+Outputs include Figure 3/4 plots, distribution and overall correlation summaries, `table1.csv`, `cross_validation_by_repeat.csv`, and `training_cutoffs.csv`.
+
+## Data access
+
+The calculator and synthetic examples run without restricted data. Reproducing study results requires authorized DCLP3 or AI-READI data and preparation of the documented inputs using the same preprocessing, clinical linkage, and eligibility rules. Raw-data extraction and clinical linkage are not automated by these scripts.
+
+No participant data or study outputs are distributed. Keep authorized inputs and derived participant-level outputs outside the public repository and follow the data providers' access and sharing terms.

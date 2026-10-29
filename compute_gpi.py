@@ -25,6 +25,10 @@ def compute_gpi(glucose_values, sampling_interval_minutes=5):
     integer value satisfying both the glucose and duration requirements.
     """
     glucose = pd.to_numeric(pd.Series(glucose_values), errors="coerce").dropna().to_numpy()
+    if not np.isfinite(sampling_interval_minutes) or sampling_interval_minutes <= 0:
+        raise ValueError("Sampling interval must be finite and positive.")
+    if np.any(~np.isfinite(glucose)) or np.any(glucose <= 0):
+        raise ValueError("Glucose must be finite and positive.")
     if glucose.size == 0:
         return np.nan
 
