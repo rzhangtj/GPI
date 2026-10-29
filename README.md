@@ -9,11 +9,11 @@ GPI is the largest integer k for which glucose is ≥k mg/dL for a cumulative du
 | File | Purpose |
 |---|---|
 | `compute_gpi.py` | Daily GPI and conventional CGM metrics |
-| `reproduce_figure2a.py` | Figure 2A treatment trajectories |
-| `analyze_dclp3.py` | ANCOVA and sensitivity analyses; Figure 2B within-TIR variation; Figure 2E day-to-day variability |
-| `analyze_aireadi.py` | Figure 3 distributions; Figure 4 HbA1c associations and ROC analysis; Table 1 |
+| `summarize_treatment.py` | Treatment-interval means, SD, SEM, and participant counts |
+| `analyze_dclp3.py` | ANCOVA and sensitivity analyses; within-TIR variation; baseline day-to-day variability |
+| `analyze_aireadi.py` | Group distribution summaries; HbA1c associations and discrimination; Table 1 |
 
-Scripts use cleaned inputs in the formats below. They generate analytical plots and numerical summaries rather than identical manuscript artwork. The calculator implements the GPI definition underlying Figure 1. Individual trace panels 2C–D, Table 2 subgroup correlations, and supplementary figures/tables are outside this package's scope.
+Scripts use cleaned inputs in the formats below. All outputs are numerical results in CSV tables or JSON files. No figures or plots are generated. The calculator implements the GPI definition underlying Figure 1. Individual trace panels 2C–D, Table 2 subgroup correlations, and supplementary figures/tables are outside this package's scope.
 
 ## Installation and use
 
@@ -22,12 +22,12 @@ Python 3.12 is recommended.
 ```bash
 python -m pip install -r requirements.txt
 python compute_gpi.py --input examples/synthetic_cgm.csv --output daily_metrics.csv
-python reproduce_figure2a.py --input examples/synthetic_daily_gpi.csv --output-dir outputs/figure2a --synthetic
-python analyze_dclp3.py --input examples/synthetic_dclp3_daily.csv --output-dir outputs/dclp3 --synthetic
-python analyze_aireadi.py --input examples/synthetic_aireadi_participants.csv --output-dir outputs/aireadi --synthetic
+python summarize_treatment.py --input examples/synthetic_daily_gpi.csv --output-dir outputs/treatment
+python analyze_dclp3.py --input examples/synthetic_dclp3_daily.csv --output-dir outputs/dclp3
+python analyze_aireadi.py --input examples/synthetic_aireadi_participants.csv --output-dir outputs/aireadi
 ```
 
-The example CSVs are entirely synthetic and demonstrate separate input formats; they do not reproduce study results. Replace the input paths with authorized data to run the study analyses and omit `--synthetic`. Use new output directories. Synthetic plots are labeled automatically when all identifiers start with `SYN_`.
+The example CSVs are entirely synthetic and demonstrate separate input formats; they do not reproduce study results. Replace the input paths with authorized data to run the study analyses. Use new output directories. Synthetic participant identifiers start with `SYN_`. Keep demonstration outputs separate from study results.
 
 ## GPI calculator
 
@@ -41,7 +41,7 @@ The generic calculator requires ≥200 readings/day; days below this threshold h
 
 ## DCLP3
 
-Figure 2A input columns:
+Treatment-summary input columns:
 
 `participant_id,treatment,phase,relative_day,n_readings,gpi`
 
@@ -55,13 +55,13 @@ Supply one complete row per participant/calendar day. Treatment is `CLC` or `SAP
 
 - Primary days contain 202–288 valid readings. Baseline follows the source-designated phase, regardless of relative date. Follow-up includes post-randomization-phase days 1–182, excluding day 0.
 - Participant means average qualifying daily values with equal day weights. ANCOVA includes participants with both baseline and follow-up means, with equal participant weights.
-- Figure 2A follow-up intervals are days 1–28, 29–56, 57–84, 85–112, 113–140, and 141–182. Group means average available participant means; error bars are SEM (sample SD / sqrt(n)). The plot uses the manuscript's fixed GPI axis, 195–240.
+- Treatment-summary follow-up intervals are days 1–28, 29–56, 57–84, 85–112, 113–140, and 141–182. Group means average available participant means; SEM is (sample SD / sqrt(n)).
 - ANCOVA fits follow-up GPI ~ treatment + baseline GPI, with intercept. HC3 uses Student-t inference. The interaction model centers baseline at the pooled mean, so its treatment coefficient equals the predicted contrast averaged over the observed baseline distribution.
-- Diagnostics include residual and normal Q–Q plots, Breusch–Pagan and Shapiro–Wilk tests. Completeness sensitivity repeats aggregation and ANCOVA at 231–288 and 260–288 readings/day.
-- Figure 2B uses left-closed 5-percentage-point TIR bands; the final 95–100 band includes 100. Models include categorical TIR band alone and TIR band plus participant fixed effects. Residual SD is sqrt(SSE / residual degrees of freedom).
-- Figure 2E calculates sample SD / mean across qualifying baseline days for each participant and metric, pooling treatment groups. At least two days and a positive mean are required; undefined CVs are excluded. CV is reported as a fraction.
+- Numerical diagnostics include Breusch–Pagan and Shapiro–Wilk tests. Completeness sensitivity repeats aggregation and ANCOVA at 231–288 and 260–288 readings/day.
+- Within-TIR analysis uses left-closed 5-percentage-point TIR bands; the final 95–100 band includes 100. Models include categorical TIR band alone and TIR band plus participant fixed effects. Residual SD is sqrt(SSE / residual degrees of freedom).
+- Baseline variability analysis calculates sample SD / mean across qualifying baseline days for each participant and metric, pooling treatment groups. At least two days and a positive mean are required; undefined CVs are excluded. CV is reported as a fraction.
 
-Outputs include Figure 2A treatment and participant summaries, `ancova.json`, diagnostic plots, `within_tir.json`, and Figure 2B/2E summary CSVs and plots.
+Outputs are `participant_interval_means.csv` and `treatment_summary.csv` from `summarize_treatment.py`; and `ancova.json`, `within_tir.json`, `within_tir_summary.csv`, and `baseline_variability.csv` from `analyze_dclp3.py`.
 
 ## AI-READI
 
@@ -78,17 +78,17 @@ Use these group labels:
 - `Oral/non-insulin diabetes`
 - `Insulin-treated diabetes`
 
-The distribution cohort contains 1,898 participants; the HbA1c-matched cohort contains 1,848. Supply blank HbA1c where unavailable. Figure 3A restricts healthy participants to HbA1c <5.7%; Figure 3B uses all participants. Figure 4 and Table 1 exclude missing HbA1c and require complete comparator metrics in the same remaining participants. Comparator fields may be blank when HbA1c is absent. Exact seeded resampling requires the same participant order as the source analysis; input order is preserved.
+The distribution cohort contains 1,898 participants; the HbA1c-matched cohort contains 1,848. Supply blank HbA1c where unavailable. The healthy-group summary restricts healthy participants to HbA1c <5.7%; group distribution summaries use all participants. HbA1c association and discrimination analyses exclude missing HbA1c and require complete comparator metrics in the same remaining participants. Comparator fields may be blank when HbA1c is absent. Exact seeded resampling requires the same participant order as the source analysis; input order is preserved.
 
 ### Statistical calculations
 
-Figure 4A reports overall Pearson and Spearman correlations. ROC analyses evaluate HbA1c ≥5.7% and ≥6.5%. TIR is negated for ROC calculations; exported native TIR thresholds use ≤, while other thresholds use ≥.
+The association analysis reports overall Pearson and Spearman correlations. ROC analyses evaluate HbA1c ≥5.7% and ≥6.5%. TIR is negated for ROC calculations; exported native TIR thresholds use ≤, while other thresholds use ≥.
 
 Full-cohort cutoffs maximize the Youden index using `roc_curve(drop_intermediate=True)` and the first exact maximum among descending retained thresholds. AUC and cutoff percentile intervals use 2,000 unrestricted participant bootstrap draws (seed 264707), shared across metrics and endpoints. One-class draws are omitted; nonfinite cutoffs are omitted from cutoff intervals. Valid draw counts are exported.
 
 Internal validation uses ten repeats of stratified five-fold cross-validation (seeds 7000–7009). Metrics share splits within each endpoint. Training-selected cutoffs are applied to held-out participants; classifications are pooled within each repeat before averaging performance. Table 1 AUCs are full-cohort estimates. Cross-validation evaluates cutoff selection, not external validity of the fixed full-cohort cutoffs. Predictive values depend on cohort prevalence.
 
-Outputs include Figure 3/4 plots, distribution and overall correlation summaries, `table1.csv`, `cross_validation_by_repeat.csv`, and `training_cutoffs.csv`.
+Outputs are `group_distribution_summary.csv`, `healthy_hba1c_summary.csv`, `hba1c_correlations.csv`, `table1.csv`, `cross_validation_by_repeat.csv`, and `training_cutoffs.csv`.
 
 ## Data access
 

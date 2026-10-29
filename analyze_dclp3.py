@@ -5,9 +5,6 @@ import json
 from pathlib import Path
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import statsmodels.formula.api as smf
 from scipy.stats import shapiro
 from statsmodels.stats.diagnostic import het_breuschpagan
@@ -55,7 +52,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', required=True)
     parser.add_argument('--output-dir', required=True)
-    parser.add_argument('--synthetic', action='store_true')
     a = parser.parse_args()
     d = pd.read_csv(a.input, dtype={'participant_id':str})
     required = ['participant_id','date','treatment','phase','relative_day','n_readings',*METRICS]
@@ -69,7 +65,6 @@ def main():
     if (d.n_readings%1 != 0).any() or (d.relative_day%1 != 0).any(): raise ValueError('Day offsets and reading counts must be integers.')
     if not d[METRICS[2:]].ge(0).all().all() or not d[METRICS[2:]].le(100).all().all(): raise ValueError('Time metrics must be percentages from 0 to 100.')
     out=Path(a.output_dir);out.mkdir(parents=True, exist_ok=False)
-    label='Synthetic demonstration — ' if a.synthetic or d.participant_id.str.startswith('SYN_').all() else ''
     results=[]
     for minimum in [202,231,260]:
         b,p=select_days(d,minimum);s=participants(b,p)
@@ -78,13 +73,6 @@ def main():
         results.append(result)
         if minimum==202:
             primary_b,primary_p=b,p
-            fig,axes=plt.subplots(1,2,figsize=(9,3.5))
-            axes[0].scatter(model.fittedvalues,model.resid,s=10)
-            axes[0].axhline(0,color='black',lw=1)
-            axes[0].set(xlabel='Fitted GPI',ylabel='Residual')
-            from scipy.stats import probplot
-            probplot(model.resid,plot=axes[1]);fig.suptitle(label+'ANCOVA diagnostics')
-            fig.tight_layout();fig.savefig(out/'ancova_diagnostics.png',dpi=200);plt.close(fig)
     (out/'ancova.json').write_text(json.dumps(results,indent=2)+'\n')
     p=primary_p.copy();p['tir_band']=np.minimum((p.tir_70_180//5).astype(int)*5,95)
     m1=smf.ols('gpi ~ C(tir_band)',p).fit()
@@ -92,21 +80,13 @@ def main():
     (out/'within_tir.json').write_text(json.dumps(dict(n_days=len(p),n_participants=p.participant_id.nunique(),
         r2_band=m1.rsquared,r2_band_and_participant=m2.rsquared,residual_sd=float(np.sqrt(m2.mse_resid))),indent=2)+'\n')
     bands=p.groupby('tir_band').gpi.agg(['count','mean','median','min','max'])
-    bands.to_csv(out/'figure2b_summary.csv')
-    fig,ax=plt.subplots(figsize=(9,4));groups=list(p.groupby('tir_band'))
-    ax.boxplot([g.gpi for _,g in groups],tick_labels=[f'{k}–{k+5}' for k,_ in groups],showfliers=False)
-    ax.tick_params(axis='x',rotation=60);ax.set(xlabel='TIR (%)',ylabel='Daily GPI',title=label+'Within-TIR distribution')
-    fig.tight_layout();fig.savefig(out/'figure2b.png',dpi=300);plt.close(fig)
-    values=[];rows=[]
+    bands.to_csv(out/'within_tir_summary.csv')
+    rows=[]
     for metric in METRICS:
         z=primary_b.groupby('participant_id')[metric].agg(['mean','std','count'])
         cv=(z['std']/z['mean']).where((z['count']>=2)&(z['mean']>0)).dropna()
-        values.append(cv)
         rows.append(dict(metric=metric,n=len(cv),median=cv.median(),q25=cv.quantile(.25),q75=cv.quantile(.75)))
-    pd.DataFrame(rows).to_csv(out/'figure2e_summary.csv',index=False)
-    fig,ax=plt.subplots(figsize=(8,4));ax.boxplot(values,tick_labels=['GPI','Mean glucose','TIR','TAR 180–250','TAR >180','TAR >250'],showfliers=False)
-    ax.tick_params(axis='x',rotation=25);ax.set(ylabel='Within-participant CV (fraction)',title=label+'Baseline day-to-day variability')
-    fig.tight_layout();fig.savefig(out/'figure2e.png',dpi=300);plt.close(fig)
+    pd.DataFrame(rows).to_csv(out/'baseline_variability.csv',index=False)
     print('Analysis complete. Outputs:',out)
 
 if __name__=='__main__':main()
